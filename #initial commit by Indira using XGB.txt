@@ -1,0 +1,57 @@
+#initial commit by Indira using XGBoost model
+
+
+from xgboost import XGBClassifier
+from sklearn.model_selection import RandomizedSearchCV, train_test_split
+from sklearn.metrics import accuracy_score, classification_report
+import numpy as np
+
+# Train/Validation Split
+X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42,stratify=y)
+
+# Define XGBoost model
+xgb_model = XGBClassifier(
+    use_label_encoder=False,
+    eval_metric='logloss',
+    random_state=42
+)
+
+# Define parameter distribution for Randomized Search
+param_dist = {
+    'n_estimators': [100, 150, 200, 250],
+    'max_depth': [3, 4, 5, 6, 8],
+    'learning_rate': [0.01, 0.05, 0.1, 0.2],
+    'subsample': [0.6, 0.8, 1.0],
+    'colsample_bytree': [0.6, 0.8, 1.0],
+    'gamma': [0, 0.1, 0.3, 0.5],
+    'min_child_weight': [1, 3, 5, 7]
+}
+
+# Randomized SearchCV
+random_search = RandomizedSearchCV(
+    estimator=xgb_model,
+    param_distributions=param_dist,
+    n_iter=30,  # number of random combinations to try
+    scoring='accuracy',
+    cv=3,
+    verbose=1,
+    random_state=42,
+    n_jobs=-1
+)
+
+# Fit the random search model
+random_search.fit(X_train, y_train)
+
+# Best parameters and model
+best_params = random_search.best_params_
+print("🔥 Best Hyperparameters:", best_params)
+
+# Predict using best model
+best_model = random_search.best_estimator_
+y_pred = best_model.predict(X_val)
+
+# Evaluation
+print("\n📊 Tuned XGBoost Model Evaluation:")
+print("Accuracy:", accuracy_score(y_val, y_pred))
+print(classification_report(y_val, y_pred))
+ 
